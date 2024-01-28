@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Optional
+from typing import Dict, Optional
 import requests
 import subprocess
 from dataclasses import dataclass
@@ -25,7 +25,7 @@ def get_metadata_from_api(url: str, key: str) -> Optional[str]:
         return None
 
 
-def get_metadata(args: argparse.Namespace) -> dict:
+def get_metadata(args: argparse.Namespace) -> Dict[str, Optional[str]]:
     metadata = {}
 
     metadata['base_url'] = args.base_url
@@ -55,7 +55,7 @@ def parse_args():
     return parser.parse_args(), parser
 
 
-def validate_metadata(metadata: dict) -> Optional[Metadata]:
+def validate_metadata(metadata: Dict[str, Optional[str]]) -> Optional[Metadata]:
     found_error = False
     for key in metadata:
         if metadata[key] is None and key not in ["commit_id", "dir_name"]:
@@ -63,7 +63,7 @@ def validate_metadata(metadata: dict) -> Optional[Metadata]:
             print(f"Metadata '{key}' is missing. Consider passing it via a command-line argument.")
 
     if not found_error:
-        return Metadata(**metadata)
+        return Metadata(**metadata) # type: ignore - checked above
 
 
 if __name__ == "__main__":
