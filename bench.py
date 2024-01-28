@@ -17,22 +17,22 @@ class Metadata:
     dir_name: Optional[str] = None
 
 
-def get_metadata_from_api(url: str, default: str, key: str) -> str:
+def get_metadata_from_api(url: str, key: str) -> Optional[str]:
     try:
         response = requests.get(url).json()
         return response.get(key)
     except:
-        return default
+        return None
 
 
 def get_metadata(args: argparse.Namespace) -> dict:
     metadata = {}
 
     metadata['base_url'] = args.base_url
-    metadata['model_name'] = get_metadata_from_api(f"{args.base_url}/api/v1/model", args.model_name, "result")
-    metadata['ctx_length'] = get_metadata_from_api(f"{args.base_url}/api/extra/true_max_context_length", args.ctx_length, "value")
-    metadata['prog_name'] = get_metadata_from_api(f"{args.base_url}/api/extra/version", args.prog_name, "result")
-    metadata['prog_ver'] = get_metadata_from_api(f"{args.base_url}/api/extra/version", args.prog_ver, "version")
+    metadata['model_name'] = args.model_name or get_metadata_from_api(f"{args.base_url}/api/v1/model", "result")
+    metadata['ctx_length'] = args.ctx_length or get_metadata_from_api(f"{args.base_url}/api/extra/true_max_context_length", "value")
+    metadata['prog_name'] = args.prog_name or get_metadata_from_api(f"{args.base_url}/api/extra/version", "result")
+    metadata['prog_ver'] = args.prog_ver or get_metadata_from_api(f"{args.base_url}/api/extra/version", "version")
 
     try:
         commit_id = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip().decode()
@@ -47,8 +47,8 @@ def get_metadata(args: argparse.Namespace) -> dict:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="API Benchmarking Tool")
-    parser.add_argument("--base_url", default="http://localhost:5001/", help="Base URL of the API")
-    parser.add_argument("--ctx_length", type=int, default=None, help="Max total tokens limit for benchmarking")
+    parser.add_argument("--base-url", default="http://localhost:5001/", help="Base URL of the API")
+    parser.add_argument("--ctx-length", type=int, default=None, help="Max total tokens limit for benchmarking")
     parser.add_argument("--model-name", default=None, help="Model name if API call fails")
     parser.add_argument("--prog-name", default=None, help="Program name if API call fails")
     parser.add_argument("--prog-ver", default=None, help="Program version if API call fails")
