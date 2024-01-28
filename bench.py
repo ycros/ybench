@@ -1,5 +1,6 @@
 import argparse
 from curses import meta
+import json
 from math import floor
 import os
 from typing import Dict, List, Optional, Tuple
@@ -9,6 +10,8 @@ import subprocess
 from dataclasses import dataclass
 import time
 import datasets
+
+from analyze import analyze
 
 
 TOKENS_TO_STRLEN_FACTOR = 4.27
@@ -87,7 +90,7 @@ def benchmark_requests(metadata: Metadata):
     results = []
     seed = 0
     ctx_size_chunk = floor(metadata.ctx_length / 8)
-    for iteration in range(1):
+    for iteration in range(3):
         for max_tokens in range(
             ctx_size_chunk, metadata.ctx_length - ctx_size_chunk, ctx_size_chunk
         ):
@@ -229,6 +232,21 @@ def validate_metadata(metadata: Dict[str, Optional[str]]) -> Optional[Metadata]:
         return Metadata(**metadata)  # type: ignore - checked above
 
 
+def save_and_print_results(metadata: Metadata, results: List[dict]):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    filename = f"{metadata.prog_name}_{metadata.prog_ver}_{metadata.model_name}_{metadata.ctx_length}_{timestamp}.jsonl"
+    filename = filename.replace("/", "_")
+    with open(filename, "w") as file:
+        for result in results:
+            file.write(json.dumps(result) + "\n")
+
+    print("Results saved to", filename)
+    print(
+        "Results for {metadata.prog_name} {metadata.prog_ver} on {metadata.model_name} with max context length {metadata.ctx_length}"
+    )
+    analyze(results)
+
+
 if __name__ == "__main__":
     args, parser = parse_args()
     raw_metadata = get_metadata(args)
@@ -239,4 +257,4 @@ if __name__ == "__main__":
     print(metadata)
     # get_max_prompt(metadata, 0)
     results = benchmark_requests(metadata)
-    # print(results)
+    save_and_print_results(metadata, results)
